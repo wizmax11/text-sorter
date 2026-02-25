@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Refinery - AI Text Sorter & Cleaner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@300;400;600&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #151520;
+            --bg-tertiary: #1f1f2e;
+            --accent-gold: #d4af37;
+            --accent-emerald: #10b981;
+            --text-primary: #e5e7eb;
+            --text-secondary: #9ca3af;
+            --border: #2d2d3f;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(212, 175, 55, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(16, 185, 129, 0.06) 0%, transparent 50%);
+            animation: drift 20s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        @keyframes drift {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(50px, 50px) rotate(5deg); }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 4rem;
+            font-weight: 300;
+            background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-emerald) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+            letter-spacing: -2px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            letter-spacing: 0.5px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+            animation: fadeInUp 0.8s ease-out 0.2s backwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-gold), var(--accent-emerald));
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .panel:hover::before {
+            opacity: 1;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .panel-title {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .badge.input {
+            background: rgba(212, 175, 55, 0.15);
+            color: var(--accent-gold);
+        }
+
+        .badge.output {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-emerald);
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 300px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1rem;
+            color: var(--text-primary);
+            resize: vertical;
+            transition: all 0.3s ease;
+            line-height: 1.6;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+        }
+
+        textarea::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            animation: fadeInUp 0.8s ease-out 0.3s backwards;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 16px 32px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'DM Sans', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        button:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-emerald) 100%);
+            color: var(--bg-primary);
+            flex: 1;
+            position: relative;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(212, 175, 55, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent-gold);
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 25px;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            margin-bottom: 30px;
+            animation: fadeInUp 0.8s ease-out 0.4s backwards;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            padding: 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .option:hover {
+            background: var(--bg-secondary);
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--accent-gold);
+            cursor: pointer;
+        }
+
+        label {
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            animation: fadeInUp 0.8s ease-out 0.5s backwards;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: var(--accent-gold);
+            transform: translateY(-4px);
+        }
+
+        .stat-value {
+            font-family: 'Crimson Pro', serif;
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--accent-emerald);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: var(--accent-gold);
+            font-style: italic;
+        }
+
+        .loading.active {
+            display: block;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border);
+            margin-top: 60px;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Text Refinery</h1>
+            <p class="subtitle">AI-powered text cleaning and intelligent sorting</p>
+        </header>
+
+        <div class="options">
+            <div class="option">
+                <input type="checkbox" id="removeNumbers" checked>
+                <label for="removeNumbers">Remove Numbers</label>
+            </div>
+            <div class="option">
+                <input type="checkbox" id="sortAlpha" checked>
+                <label for="sortAlpha">Sort Alphabetically</label>
+            </div>
+            <div class="option">
+                <input type="checkbox" id="removeDuplicates" checked>
+                <label for="removeDuplicates">Remove Duplicates</label>
+            </div>
+            <div class="option">
+                <input type="checkbox" id="trimSpaces" checked>
+                <label for="trimSpaces">Trim Extra Spaces</label>
+            </div>
+            <div class="option">
+                <input type="checkbox" id="capitalizeFirst">
+                <label for="capitalizeFirst">Capitalize First Letter</label>
+            </div>
+            <div class="option">
+                <input type="checkbox" id="removeEmptyLines" checked>
+                <label for="removeEmptyLines">Remove Empty Lines</label>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Input</h2>
+                    <span class="badge input">Raw</span>
+                </div>
+                <textarea id="inputText" placeholder="Paste your messy text here...
+
+Example:
+I''s Pure
+7
+6
+Voices of a Distant Star
+"></textarea>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Output</h2>
+                    <span class="badge output">Refined</span>
+                </div>
+                <textarea id="outputText" readonly placeholder="Your cleaned and sorted text will appear here..."></textarea>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-primary" id="processBtn" onclick="processText()">
+                <span>Refine Text</span>
+            </button>
+            <button class="btn-secondary" onclick="clearAll()">Clear All</button>
+            <button class="btn-secondary" onclick="copyOutput()">Copy Output</button>
+        </div>
+
+        <div class="loading" id="loading">Processing with AI magic...</div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="linesInput">0</div>
+                <div class="stat-label">Input Lines</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="linesOutput">0</div>
+                <div class="stat-label">Output Lines</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="charsRemoved">0</div>
+                <div class="stat-label">Chars Removed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="duplicates">0</div>
+                <div class="stat-label">Duplicates Found</div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Text Refinery - Powered by intelligent text processing
+    </footer>
+
+    <script>
+        const inputText = document.getElementById('inputText');
+        const outputText = document.getElementById('outputText');
+        const loading = document.getElementById('loading');
+
+        // Update stats on input
+        inputText.addEventListener('input', updateInputStats);
+
+        function updateInputStats() {
+            const text = inputText.value;
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+            document.getElementById('linesInput').textContent = lines.length;
+        }
+
+        async function processText() {
+            const text = inputText.value;
+            if (!text.trim()) {
+                alert('Please enter some text to process');
+                return;
+            }
+
+            loading.classList.add('active');
+            document.getElementById('processBtn').disabled = true;
+
+            // Simulate AI processing with slight delay
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            const originalLength = text.length;
+            let lines = text.split('\n');
+
+            // Get options
+            const removeNumbers = document.getElementById('removeNumbers').checked;
+            const sortAlpha = document.getElementById('sortAlpha').checked;
+            const removeDuplicates = document.getElementById('removeDuplicates').checked;
+            const trimSpaces = document.getElementById('trimSpaces').checked;
+            const capitalizeFirst = document.getElementById('capitalizeFirst').checked;
+            const removeEmptyLines = document.getElementById('removeEmptyLines').checked;
+
+            // Track duplicates
+            let duplicateCount = 0;
+
+            // Process each line
+            lines = lines.map(line => {
+                let processed = line;
+
+                // Trim spaces
+                if (trimSpaces) {
+                    processed = processed.trim();
+                    processed = processed.replace(/\s+/g, ' ');
+                }
+
+                // Remove numbers
+                if (removeNumbers) {
+                    processed = processed.replace(/\d+/g, '');
+                }
+
+                // Capitalize first letter
+                if (capitalizeFirst && processed.length > 0) {
+                    processed = processed.charAt(0).toUpperCase() + processed.slice(1);
+                }
+
+                return processed;
+            });
+
+            // Remove empty lines
+            if (removeEmptyLines) {
+                lines = lines.filter(line => line.trim() !== '');
+            }
+
+            // Remove duplicates
+            if (removeDuplicates) {
+                const originalCount = lines.length;
+                const seen = new Set();
+                lines = lines.filter(line => {
+                    const normalized = line.toLowerCase().trim();
+                    if (seen.has(normalized)) {
+                        duplicateCount++;
+                        return false;
+                    }
+                    seen.add(normalized);
+                    return true;
+                });
+            }
+
+            // Sort alphabetically
+            if (sortAlpha) {
+                lines.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+            }
+
+            const result = lines.join('\n');
+            outputText.value = result;
+
+            // Update stats
+            document.getElementById('linesOutput').textContent = lines.length;
+            document.getElementById('charsRemoved').textContent = originalLength - result.length;
+            document.getElementById('duplicates').textContent = duplicateCount;
+
+            loading.classList.remove('active');
+            document.getElementById('processBtn').disabled = false;
+        }
+
+        function clearAll() {
+            inputText.value = '';
+            outputText.value = '';
+            document.getElementById('linesInput').textContent = '0';
+            document.getElementById('linesOutput').textContent = '0';
+            document.getElementById('charsRemoved').textContent = '0';
+            document.getElementById('duplicates').textContent = '0';
+        }
+
+        function copyOutput() {
+            if (!outputText.value) {
+                alert('Nothing to copy yet!');
+                return;
+            }
+            outputText.select();
+            document.execCommand('copy');
+            
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = 'Copied!';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 2000);
+        }
+
+        // Initialize
+        updateInputStats();
+    </script>
+</body>
+</html>
